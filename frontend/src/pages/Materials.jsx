@@ -93,17 +93,18 @@ export default function Materials() {
   const groupedData = [];
   sessions.forEach(session => {
     const sessionMaterials = materials.filter(m => m.session_id === session.id);
-    if (sessionMaterials.length > 0) {
-      // Apply filters
-      const matchesMonth = selectedMonth ? session.month_number.toString() === selectedMonth : true;
-      const q = searchQuery.toLowerCase();
-      const matchesSearch = q === '' || 
-        session.topic.toLowerCase().includes(q) || 
-        sessionMaterials.some(m => m.title.toLowerCase().includes(q) || (m.description && m.description.toLowerCase().includes(q)));
+    
+    // Apply filters
+    const matchesMonth = selectedMonth ? session.month_number.toString() === selectedMonth : true;
+    const q = searchQuery.toLowerCase();
+    
+    // If there's a search query, it can match the session topic OR the materials
+    const matchesSearch = q === '' || 
+      session.topic.toLowerCase().includes(q) || 
+      sessionMaterials.some(m => m.title.toLowerCase().includes(q) || (m.description && m.description.toLowerCase().includes(q)));
 
-      if (matchesMonth && matchesSearch) {
-        groupedData.push({ session, materials: sessionMaterials });
-      }
+    if (matchesMonth && matchesSearch) {
+      groupedData.push({ session, materials: sessionMaterials });
     }
   });
 
@@ -161,28 +162,35 @@ export default function Materials() {
                 </div>
                 
                 <div className="flex-1 space-y-3 mt-4">
-                  {group.materials.map(material => (
-                    <a 
-                      key={material.id}
-                      href={material.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group block p-3 rounded-lg bg-surface-inset border border-border-default hover:bg-surface-raised hover:border-accent-glow transition-all"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3">
-                          <div className="mt-0.5 text-fg-secondary group-hover:text-accent-glow transition-colors">
-                            <TypeIcon type={material.type} />
+                  {group.materials.length > 0 ? (
+                    group.materials.map(material => (
+                      <a 
+                        key={material.id}
+                        href={material.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group block p-3 rounded-lg bg-surface-inset border border-border-default hover:bg-surface-raised hover:border-accent-glow transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5 text-fg-secondary group-hover:text-accent-glow transition-colors">
+                              <TypeIcon type={material.type} />
+                            </div>
+                            <div>
+                              <p className="text-body font-medium text-fg-primary group-hover:text-white transition-colors">{material.title}</p>
+                              {material.description && <p className="text-caption text-fg-tertiary mt-1 line-clamp-2">{material.description}</p>}
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-body font-medium text-fg-primary group-hover:text-white transition-colors">{material.title}</p>
-                            {material.description && <p className="text-caption text-fg-tertiary mt-1 line-clamp-2">{material.description}</p>}
-                          </div>
+                          <ExternalLink size={14} className="text-fg-tertiary opacity-0 group-hover:opacity-100 transition-opacity mt-1 flex-shrink-0" />
                         </div>
-                        <ExternalLink size={14} className="text-fg-tertiary opacity-0 group-hover:opacity-100 transition-opacity mt-1 flex-shrink-0" />
-                      </div>
-                    </a>
-                  ))}
+                      </a>
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-border-subtle rounded-xl opacity-60">
+                      <Plus size={24} className="text-fg-tertiary mb-2" />
+                      <p className="text-caption text-fg-tertiary">No materials added yet</p>
+                    </div>
+                  )}
                 </div>
               </Card>
             );
