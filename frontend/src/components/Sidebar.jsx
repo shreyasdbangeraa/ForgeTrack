@@ -1,99 +1,101 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, Users, BookOpen, Upload, UserCheck, Calendar, Settings, LogOut } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { 
+  LayoutDashboard, 
+  CheckSquare, 
+  Users, 
+  BookOpen, 
+  Upload, 
+  UserCheck, 
+  Calendar, 
+  Settings, 
+  LogOut,
+  Database,
+  ChevronRight
+} from 'lucide-react';
 import { useAuth } from './AuthContext';
-import { supabase } from '../lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 const Sidebar = () => {
-  const { role, user } = useAuth();
+  const { role, profile, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
+    window.location.href = '/';
   };
 
   const navItemClass = ({ isActive }) => {
-    return `flex items-center h-[44px] px-4 rounded-lg transition-colors group relative ${
-      isActive
-        ? 'bg-surface-raised text-fg-primary'
-        : 'text-fg-secondary hover:bg-surface hover:text-fg-primary'
-    }`;
+    return `flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative
+      ${isActive 
+        ? 'bg-neon-gradient text-white shadow-[0_0_20px_rgba(255,0,122,0.3)]' 
+        : 'text-fg-secondary hover:bg-white/5 hover:text-white'}
+    `;
   };
 
   const NavItem = ({ to, icon: Icon, label }) => (
     <NavLink to={to} className={navItemClass}>
-      {({ isActive }) => (
-        <>
-          {isActive && (
-            <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-accent-glow rounded-l-lg"></div>
-          )}
-          <Icon className="w-5 h-5 mr-3 flex-shrink-0" strokeWidth={1.75} />
-          <span className="text-body font-normal">{label}</span>
-        </>
-      )}
+      <Icon size={20} className="relative z-10" />
+      <span className="font-medium tracking-tight relative z-10">{label}</span>
+      <ChevronRight className="ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" size={16} />
     </NavLink>
   );
 
-  const Label = ({ children }) => (
-    <div className="text-label text-fg-tertiary mb-3 px-4 mt-6">{children}</div>
-  );
-
   return (
-    <div className="flex flex-col w-full h-full py-6 px-4">
-      {/* Logo Area */}
-      <div className="flex items-center px-4 mb-8">
-        <div className="w-8 h-8 rounded-lg bg-accent-glow flex items-center justify-center mr-3">
-          <span className="text-white font-bold font-display">F</span>
-        </div>
-        <span className="text-h2 text-fg-primary tracking-tight">ForgeTrack</span>
+    <div className="flex flex-col w-full h-full glass-card border-r border-white/5 relative z-20">
+      {/* Brand */}
+      <div className="p-8 flex items-center gap-3">
+        <motion.div 
+          whileHover={{ rotate: 360, scale: 1.1 }}
+          transition={{ duration: 1 }}
+          className="w-10 h-10 bg-neon-gradient rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(255,0,122,0.4)]"
+        >
+          <Database size={24} className="text-white" />
+        </motion.div>
+        <span className="text-xl font-bold font-space tracking-tighter">FORGE<span className="text-neon-pink">TRACK</span></span>
       </div>
 
-      {/* Welcome Block */}
-      <div className="px-4 mb-6">
-        <div className="text-body-sm text-fg-secondary">Welcome Back</div>
-        <div className="text-body font-medium truncate">{user?.email}</div>
-      </div>
-
-      <div className="h-px bg-border-subtle mx-4 mb-2"></div>
+      <div className="h-px bg-white/5 mx-6 mb-6"></div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto">
+      <nav className="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar">
         {role === 'mentor' && (
           <>
-            <Label>Overview</Label>
+            <div className="text-[10px] uppercase tracking-[0.2em] text-fg-tertiary font-bold mb-4 ml-4">Main Core</div>
             <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
 
-            <Label>Activity</Label>
+            <div className="text-[10px] uppercase tracking-[0.2em] text-fg-tertiary font-bold mb-4 mt-8 ml-4">Activity</div>
             <NavItem to="/attendance" icon={CheckSquare} label="Mark Attendance" />
             <NavItem to="/history" icon={Users} label="Student History" />
             <NavItem to="/materials" icon={BookOpen} label="Materials" />
 
-            <Label>Data</Label>
+            <div className="text-[10px] uppercase tracking-[0.2em] text-fg-tertiary font-bold mb-4 mt-8 ml-4">Data System</div>
             <NavItem to="/upload" icon={Upload} label="Upload CSV" />
           </>
         )}
 
         {role === 'student' && (
           <>
-            <Label>Overview</Label>
-            <NavItem to="/me/attendance" icon={UserCheck} label="My Attendance" />
-            <NavItem to="/me/upcoming" icon={Calendar} label="Upcoming" />
+            <div className="text-[10px] uppercase tracking-[0.2em] text-fg-tertiary font-bold mb-4 ml-4">My Core</div>
+            <NavItem to="/me/attendance" icon={UserCheck} label="Attendance" />
+            <NavItem to="/me/upcoming" icon={Calendar} label="Schedule" />
             
-            <Label>Resources</Label>
+            <div className="text-[10px] uppercase tracking-[0.2em] text-fg-tertiary font-bold mb-4 mt-8 ml-4">Resources</div>
             <NavItem to="/me/materials" icon={BookOpen} label="Materials" />
           </>
         )}
       </nav>
 
-      {/* Bottom Actions */}
-      <div className="mt-auto pt-4 border-t border-border-subtle">
-        <Label>Account</Label>
-        <NavLink to="/settings" className={navItemClass}>
-          <Settings className="w-5 h-5 mr-3 flex-shrink-0" strokeWidth={1.75} />
-          <span className="text-body font-normal">Settings</span>
-        </NavLink>
-        <button onClick={handleLogout} className="flex w-full items-center h-[44px] px-4 rounded-lg text-fg-secondary hover:bg-surface hover:text-fg-primary transition-colors">
-          <LogOut className="w-5 h-5 mr-3 flex-shrink-0" strokeWidth={1.75} />
-          <span className="text-body font-normal">Logout</span>
+      {/* Account Section */}
+      <div className="p-4 mt-auto border-t border-white/5">
+        <NavItem to="/settings" icon={Settings} label="Settings" />
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-3 w-full px-4 py-4 rounded-2xl text-fg-secondary hover:bg-danger/10 hover:text-danger transition-all duration-300 group mt-2"
+        >
+          <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
+          <span className="font-medium">Logout</span>
         </button>
       </div>
     </div>

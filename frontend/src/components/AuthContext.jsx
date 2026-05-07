@@ -1,14 +1,19 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
+  const initialized = useRef(false);
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
     // Fetch initial session
     const fetchSession = async () => {
       try {
@@ -19,9 +24,10 @@ export function AuthProvider({ children }) {
 
         if (session?.user) {
           setUser(session.user);
-          await fetchUserRole(session.user.id, session.user.email);
+          await fetchUserProfile(session.user.id, session.user.email);
         } else {
           setUser(null);
+          setProfile(null);
           setRole(null);
           setLoading(false);
         }
@@ -40,9 +46,10 @@ export function AuthProvider({ children }) {
       try {
         if (session?.user) {
           setUser(session.user);
-          await fetchUserRole(session.user.id, session.user.email);
+          await fetchUserProfile(session.user.id, session.user.email);
         } else {
           setUser(null);
+          setProfile(null);
           setRole(null);
           setLoading(false);
         }
@@ -58,32 +65,60 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  const fetchUserRole = async (userId, userEmail) => {
+  const fetchUserProfile = async (userId, userEmail) => {
     const timeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Query timeout')), 3000)
+      setTimeout(() => reject(new Error('Query timeout')), 10000)
     );
 
     try {
-      // Race the supabase query against a 3s timeout
+      // 1. Try to fetch existing profile
       const { data, error } = await Promise.race([
-        supabase.from('users').select('role').eq('id', userId).single(),
+        supabase.from('users').select('*').eq('id', userId).single(),
         timeout
       ]);
 
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
 
       if (data) {
+        setProfile(data);
         setRole(data.role);
-      } else if (userEmail === 'shreyas@gmail.com' || userEmail === 'nischay@theboringpeople.in') {
-        setRole('mentor');
+      } else {
+        // 2. Profile missing - Check if it's a known mentor and auto-create
+        let newRole = 'student';
+        let displayName = userEmail.split('@')[0];
+
+        if (userEmail === 'shreyas@gmail.com' || userEmail === 'nischay@theboringpeople.in') {
+          newRole = 'mentor';
+          displayName = userEmail === 'shreyas@gmail.com' ? 'Shreyas' : 'Nischay B K';
+        }
+
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert({
+            id: userId,
+            email: userEmail,
+            display_name: displayName,
+            role: newRole
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error('Failed to auto-create user record:', createError);
+          // Fallback state if insert fails
+          setRole(newRole);
+          setProfile({ display_name: displayName, role: newRole });
+        } else {
+          setProfile(newUser);
+          setRole(newUser.role);
+        }
       }
     } catch (err) {
-      console.error('Error fetching user role:', err);
-      // Immediate fallback for the known mentor email
+      console.error('Error in fetchUserProfile:', err);
+      // Hard fallback for development/emergency
       if (userEmail === 'shreyas@gmail.com' || userEmail === 'nischay@theboringpeople.in') {
         setRole('mentor');
-      } else {
-        setRole(null);
+        setProfile({ display_name: 'Nischay B K', role: 'mentor' });
       }
     } finally {
       setLoading(false);
@@ -93,6 +128,7 @@ export function AuthProvider({ children }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      setProfile(null);
     } catch (err) {
       console.error('Error signing out:', err);
     }
@@ -100,6 +136,7 @@ export function AuthProvider({ children }) {
   
   const value = {
     user,
+    profile,
     role: (user?.email === 'shreyas@gmail.com' || user?.email === 'nischay@theboringpeople.in') ? 'mentor' : role,
     loading,
     signOut
