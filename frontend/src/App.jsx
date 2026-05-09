@@ -38,15 +38,34 @@ const Upcoming = () => <div className="text-display-lg text-white">Upcoming Sess
 const StudentMaterials = () => <div className="text-display-lg text-white">Materials (Read-Only)</div>;
 
 function App() {
-  const { user, role, loading } = useAuth();
-
-  // Only show the global loader on the initial load when we don't have a user yet
-  if (loading && !user) {
+  const { user, profile, loading } = useAuth();
+  
+  // Show the global loader whenever we are in a loading state
+  // or if we have a user but their profile hasn't finished loading yet
+  if (loading || (user && !profile)) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white font-space font-bold text-2xl tracking-tighter">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 border-4 border-neon-pink/20 border-t-neon-pink rounded-full animate-spin"></div>
-          <div>FORGE<span className="text-neon-pink">TRACK</span></div>
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white relative overflow-hidden">
+        {/* Ambient Glows */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-neon-pink/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-neon-purple/10 rounded-full blur-[80px] animate-pulse"></div>
+
+        <div className="flex flex-col items-center gap-8 relative z-10">
+          <div className="relative w-24 h-24">
+            <div className="absolute inset-0 border-2 border-white/5 rounded-full"></div>
+            <div className="absolute inset-0 border-t-2 border-r-2 border-neon-pink rounded-full animate-spin shadow-[0_0_15px_rgba(255,0,122,0.5)]"></div>
+            <div className="absolute inset-2 border-b-2 border-l-2 border-neon-blue rounded-full animate-[spin_1.5s_linear_infinite_reverse] opacity-70"></div>
+            <div className="absolute inset-8 bg-neon-gradient rounded-full animate-pulse-slow shadow-[0_0_20px_rgba(157,0,255,0.4)]"></div>
+          </div>
+          
+          <div className="flex flex-col items-center text-center">
+            <div className="font-space font-bold text-3xl tracking-tighter mb-2">
+              FORGE<span className="text-neon-pink">TRACK</span>
+            </div>
+            <div className="h-[1px] w-12 bg-white/10 mb-4"></div>
+            <div className="text-[10px] uppercase tracking-[0.3em] text-fg-tertiary font-bold animate-pulse">
+              Initializing Core Modules
+            </div>
+          </div>
         </div>
       </div>
     );

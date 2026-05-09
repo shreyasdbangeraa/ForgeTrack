@@ -45,6 +45,7 @@ export function AuthProvider({ children }) {
     const { data: authData } = supabase.auth.onAuthStateChange(async (_event, session) => {
       try {
         if (session?.user) {
+          setLoading(true);
           setUser(session.user);
           await fetchUserProfile(session.user.id, session.user.email);
         } else {
